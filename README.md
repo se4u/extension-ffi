@@ -1,12 +1,11 @@
-# PyTorch C FFI examples
+# PyTorch Indexed Sum Function
 
-In this repository you can find examples showing how to extend PyTorch with
-custom C code. To use the ffi you need to install the `cffi` package from pip.
+In this repo you will find a C implementation of a indexed summation function.
 
-Currently there are two examples:
-* `package` - a pip distributable package
-* `script` - compiles the code into a local module, that can be later imported
-    from other files
+The IndexedSumFunction takes two inputs
+1. A 1d array of floats
+2. A 1d array of longs that denote increments along input1.
 
-You may also want to look at [pytorch/audio](https://github.com/pytorch/audio/)
-for an example of a type-generic C FFI extension.
+The output is the summation chunked according to the increments.
+For example, if input1 is [0.1, 0.2, 0.3, 0.4] and the increments are [3, 1]
+then the output will be [0.6, 0.4]

@@ -1,18 +1,25 @@
 #include <TH/TH.h>
-
-int my_lib_add_forward(THFloatTensor *input1, THFloatTensor *input2,
-		       THFloatTensor *output)
+int indexedsum_forward(THFloatTensor *input1, THLongTensor *increments, THFloatTensor *output)
 {
-  if (!THFloatTensor_isSameSizeAs(input1, input2))
-    return 0;
-  THFloatTensor_resizeAs(output, input1);
-  THFloatTensor_cadd(output, input1, 1.0, input2);
+  for(unsigned long i=0, counter=0, n=THLongTensor_nElement(increments); i < n; i++){
+    long increment = THTensor_fastGet1d(increments, i);
+    float val = 0;
+    for(long j=0; j < increment; j++)
+      val += THTensor_fastGet1d(input1, counter+j);
+    THTensor_fastSet1d(output, i, val);
+    counter += increment;
+  }
   return 1;
 }
 
-int my_lib_add_backward(THFloatTensor *grad_output, THFloatTensor *grad_input)
+int indexedsum_backward(THFloatTensor *grad_output, THLongTensor *increments, THFloatTensor *grad_input)
 {
-  THFloatTensor_resizeAs(grad_input, grad_output);
-  THFloatTensor_fill(grad_input, 1);
+  for(unsigned long i=0, counter=0, n=THLongTensor_nElement(increments); i < n; i++){
+    long increment = THTensor_fastGet1d(increments, i);
+    float val = THTensor_fastGet1d(grad_output, i);
+    for(long j=0; j < increment; j++)
+      THTensor_fastSet1d(grad_input, counter+j, val);
+    counter += increment;
+  }
   return 1;
 }

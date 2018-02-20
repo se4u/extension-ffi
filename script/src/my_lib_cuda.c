@@ -1,21 +1,27 @@
 #include <THC/THC.h>
-
 // this symbol will be resolved automatically from PyTorch libs
 extern THCState *state;
-
-int my_lib_add_forward_cuda(THCudaTensor *input1, THCudaTensor *input2,
-		       THCudaTensor *output)
+int indexedsum_forward_cuda(THCudaTensor *input1, THCudaTensor *input2, THCudaTensor *output)
 {
-  if (!THCudaTensor_isSameSizeAs(state, input1, input2))
-    return 0;
-  THCudaTensor_resizeAs(state, output, input1);
-  THCudaTensor_cadd(state, output, input1, 1.0, input2);
+  for(unsigned long i=0, counter=0, n=THCudaLongTensor_nElement(increments); i < n; i++){
+    long increment = THCudaTensor_fastGet1d(increments, i);
+    float val = 0;
+    for(long j=0; j < increment; j++)
+      val += THTensor_fastGet1d(input1, counter+j);
+    THTensor_fastSet1d(output, i, val);
+    counter += increment;
+  }
   return 1;
 }
 
-int my_lib_add_backward_cuda(THCudaTensor *grad_output, THCudaTensor *grad_input)
+int indexedsum_backward_cuda(THCudaTensor *grad_output, THCudaTensor *grad_input)
 {
-  THCudaTensor_resizeAs(state, grad_input, grad_output);
-  THCudaTensor_fill(state, grad_input, 1);
+  for(unsigned long i=0, counter=0, n=THCudaLongTensor_nElement(increments); i < n; i++){
+    long increment = THTensor_fastGet1d(increments, i);
+    float val = THTensor_fastGet1d(grad_output, i);
+    for(long j=0; j < increment; j++)
+      THTensor_fastSet1d(grad_input, counter+j, val);
+    counter += increment;
+  }
   return 1;
 }

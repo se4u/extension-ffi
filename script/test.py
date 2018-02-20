@@ -1,24 +1,17 @@
 import torch
-import torch.nn as nn
 from torch.autograd import Variable
-
-from modules.add import MyAddModule
-
-class MyNetwork(nn.Module):
-    def __init__(self):
-        super(MyNetwork, self).__init__()
-        self.add = MyAddModule()
-
-    def forward(self, input1, input2):
-        return self.add(input1, input2)
-
-model = MyNetwork()
-x = torch.range(1, 25).view(5, 5)
-input1, input2 = Variable(x), Variable(x * 4)
-print(model(input1, input2))
-print(input1 + input2)
+from functions.add import IndexedSumFunction
+a = Variable(torch.Tensor([0.1, 0.2, 0.3, 0.4]), requires_grad=True)
+b = Variable(torch.LongTensor([3, 1]), requires_grad=False)
+c = IndexedSumFunction()(a, b)
+l = (c[0]*1+c[1]*2)
+l.backward()
+assert list(a.grad.cpu().data.numpy()) == [1.0, 1.0, 1.0, 2.0]
 
 if torch.cuda.is_available():
-    input1, input2, = input1.cuda(), input2.cuda()
-    print(model(input1, input2))
-    print(input1 + input2)
+    a = Variable(torch.CudaTensor([0.1, 0.2, 0.3, 0.4]), requires_grad=True)
+    b = Variable(torch.CudaLongTensor([3, 1]), requires_grad=False)
+    c = IndexedSumFunction()(a, b)
+    l = (c[0]*1+c[1]*2)
+    l.backward()
+    assert list(a.grad.cpu().data.numpy()) == [1.0, 1.0, 1.0, 2.0]
